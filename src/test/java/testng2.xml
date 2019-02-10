@@ -1,0 +1,11 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<suite name="测试集2" verbose="1">
+    <listeners>
+        <listener class-name="com.aaron.report.STestReport"></listener>
+    </listeners>
+    <test name="测试用例名">
+        <classes>
+            <class name="com.aaron.testcase.TestDemo1"/>
+        </classes>
+    </test>
+</suite>
