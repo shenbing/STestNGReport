@@ -17,7 +17,7 @@ public class STestReport implements IReporter {
 
     private String path = System.getProperty("user.dir") + File.separator + "report.html";
 
-    private String templatePath = System.getProperty("user.dir") + File.separator + "template";
+    private InputStream templatePath = STestReport.class.getClassLoader().getResourceAsStream("template");
 
     private int testsPass = 0;
 
@@ -138,10 +138,9 @@ public class STestReport implements IReporter {
             output.write(template);
             output.flush();
             output.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     private String getStatus(int status) {
@@ -250,12 +249,10 @@ public class STestReport implements IReporter {
 
     }
 
-    private String read(String path) {
-        File file = new File(path);
-        InputStream is = null;
+    private String read(InputStream templatePath) {
+        InputStream is = templatePath;
         StringBuffer sb = new StringBuffer();
         try {
-            is = new FileInputStream(file);
             int index = 0;
             byte[] b = new byte[1024];
             while ((index = is.read(b)) != -1) {
