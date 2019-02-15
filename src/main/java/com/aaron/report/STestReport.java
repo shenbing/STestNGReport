@@ -1,10 +1,7 @@
 package com.aaron.report;
 
-import com.alibaba.fastjson.JSON;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import lombok.Getter;
-import lombok.Setter;
 import org.testng.*;
 import org.testng.xml.XmlSuite;
 
@@ -19,30 +16,18 @@ public class STestReport implements IReporter {
 
     private InputStream templatePath = STestReport.class.getClassLoader().getResourceAsStream("template");
 
+    private String beginTime;
+
+    private String endTime;
+
+    private long totalTime;
+
     private int testsPass = 0;
 
     private int testsFail = 0;
 
     private int testsSkip = 0;
 
-    private String beginTime;
-
-    private long totalTime;
-
-    private String name;
-
-    public STestReport() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-        name = formatter.format(System.currentTimeMillis());
-    }
-
-    public STestReport(String name) {
-        this.name = name;
-        if (this.name == null) {
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-            this.name = formatter.format(System.currentTimeMillis());
-        }
-    }
 
     @Override
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
@@ -64,7 +49,13 @@ public class STestReport implements IReporter {
                 list.addAll(this.listTestResult(failedConfig));
             }
         }
-        this.sort(list);
+        Collections.sort(list, (ITestResult r1, ITestResult r2) -> {
+            if (r1.getStartMillis() > r2.getStartMillis()) {
+                return 1;
+            } else {
+                return -1;
+            }
+        });
         this.outputResult(list);
     }
 
@@ -73,32 +64,22 @@ public class STestReport implements IReporter {
         return new ArrayList<ITestResult>(results);
     }
 
-    private void sort(List<ITestResult> list) {
-        Collections.sort(list, new Comparator<ITestResult>() {
-            @Override
-            public int compare(ITestResult r1, ITestResult r2) {
-                if (r1.getStartMillis() > r2.getStartMillis()) {
-                    return 1;
-                } else {
-                    return -1;
-                }
-            }
-        });
-    }
-
     private void outputResult(List<ITestResult> list) {
         try {
             List<ReportInfo> listInfo = new ArrayList<ReportInfo>();
             int index = 0;
             for (ITestResult result : list) {
-                String tn = result.getTestContext().getCurrentXmlTest().getSuite().getName() + "->" + result.getTestContext().getCurrentXmlTest().getName();
+                String sn = result.getTestContext().getCurrentXmlTest().getSuite().getName();
+                String tn = result.getTestContext().getCurrentXmlTest().getName();
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
                 if (index == 0) {
-                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
                     beginTime = formatter.format(new Date(result.getStartMillis()));
-                    index++;
                 }
                 long spendTime = result.getEndMillis() - result.getStartMillis();
                 totalTime += spendTime;
+                if (index == list.size() - 1) {
+                    endTime = formatter.format(formatter.parse(beginTime).getTime() + totalTime);
+                }
                 String status = this.getStatus(result.getStatus());
                 List<String> log = Reporter.getOutput(result);
                 for (int i = 0; i < log.size(); i++) {
@@ -113,6 +94,7 @@ public class STestReport implements IReporter {
                     }
                 }
                 ReportInfo info = new ReportInfo();
+                info.setSuiteName(sn);
                 info.setName(tn);
                 info.setSpendTime(spendTime + "ms");
                 info.setStatus(status);
@@ -121,15 +103,16 @@ public class STestReport implements IReporter {
                 info.setDescription(result.getMethod().getDescription());
                 info.setLog(log);
                 listInfo.add(info);
+                index++;
             }
             Map<String, Object> result = new HashMap<String, Object>();
-            result.put("testName", name);
             result.put("testPass", testsPass);
             result.put("testFail", testsFail);
             result.put("testSkip", testsSkip);
             result.put("testAll", testsPass + testsFail + testsSkip);
             result.put("beginTime", beginTime);
-            result.put("totalTime", totalTime + "ms");
+            result.put("endTime", endTime);
+            result.put("totalTime", mSec2hms(totalTime));
             result.put("testResult", listInfo);
             Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
             String template = this.read(templatePath);
@@ -161,94 +144,6 @@ public class STestReport implements IReporter {
         return statusString;
     }
 
-    public class ReportInfo {
-
-        @Getter
-        @Setter
-        private String name;
-
-        @Getter
-        @Setter
-        private String className;
-
-        @Getter
-        @Setter
-        private String methodName;
-
-        @Getter
-        @Setter
-        private String description;
-
-        @Getter
-        @Setter
-        private String spendTime;
-
-        @Getter
-        @Setter
-        private String status;
-
-        @Getter
-        @Setter
-        private List<String> log;
-
-//        public String getName() {
-//            return name;
-//        }
-//
-//        public void setName(String name) {
-//            this.name = name;
-//        }
-//
-//        public String getClassName() {
-//            return className;
-//        }
-//
-//        public void setClassName(String className) {
-//            this.className = className;
-//        }
-//
-//        public String getMethodName() {
-//            return methodName;
-//        }
-//
-//        public void setMethodName(String methodName) {
-//            this.methodName = methodName;
-//        }
-//
-//        public String getSpendTime() {
-//            return spendTime;
-//        }
-//
-//        public void setSpendTime(String spendTime) {
-//            this.spendTime = spendTime;
-//        }
-//
-//        public String getStatus() {
-//            return status;
-//        }
-//
-//        public void setStatus(String status) {
-//            this.status = status;
-//        }
-//
-//        public List<String> getLog() {
-//            return log;
-//        }
-//
-//        public void setLog(List<String> log) {
-//            this.log = log;
-//        }
-//
-//        public String getDescription() {
-//            return description;
-//        }
-//
-//        public void setDescription(String description) {
-//            this.description = description;
-//        }
-
-    }
-
     private String read(InputStream templatePath) {
         InputStream is = templatePath;
         StringBuffer sb = new StringBuffer();
@@ -274,4 +169,12 @@ public class STestReport implements IReporter {
         }
         return null;
     }
+
+    private String mSec2hms(long ms) {
+        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss.SSS");
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT+00:00"));
+        String hms = formatter.format(ms);
+        return hms;
+    }
+
 }

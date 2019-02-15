@@ -81,10 +81,7 @@
                         </property>
                         <property>
                             <name>listener</name>
-                            <value>org.uncommons.reportng.HTMLReporter,
-                                org.uncommons.reportng.JUnitXMLReporter,
-                                com.aaron.report.STestReport
-                            </value>
+                            <value>com.aaron.report.STestReport</value>
                         </property>
                     </properties>
                     <suiteXmlFiles>
